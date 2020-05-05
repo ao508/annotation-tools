@@ -269,7 +269,9 @@ def resolve_tumor_seq_alleles(data, ref_allele):
         if column in data.keys():
             tum_seq_allele1 = process_datum(data[column])
             tum_seq_allele2 = process_datum(data[TUMOR_SEQ_ALLELE2_COLUMNS[i]])
-
+        elif column.upper() in data.keys():
+            tum_seq_allele1 = process_datum(data[column.upper()])
+            tum_seq_allele2 = process_datum(data[TUMOR_SEQ_ALLELE2_COLUMNS[i].upper()])
             # if at least one is not empty then exit for-loop
             if tum_seq_allele1 != "" or tum_seq_allele2 != "":
                 break
@@ -456,6 +458,7 @@ def resolve_end_position(data, start_pos, variant_type, ref_allele):
         try:
             end_pos = str(int(start_pos)+1)
         except ValueError:
+            print_warning("Error while resolving end position... ")
             print(data)
             sys.exit(2)
 
@@ -744,9 +747,10 @@ def create_maf_record_from_maf(filename, data, center_name, sequence_source):
     # identify the tumor sample barcode column present in the input MAF
     try:
         for col in TUMOR_SAMPLE_BARCODE_COLUMNS:
-            if col in data.keys():
-                tumor_sample_barcode_col_name = col
-                break
+            for c in [col, col.upper()]:
+                if c in data.keys():
+                    tumor_sample_barcode_col_name = c
+                    break
         maf_data["Tumor_Sample_Barcode"] = data[tumor_sample_barcode_col_name]
     except AttributeError:
         message = "[ERROR] create_maf_record_from_maf(), Error enountered while trying to identify the tumor sample barcode column to use from MAF. "
@@ -1453,7 +1457,7 @@ def extract_maf_data_from_file(filename, center_name, sequence_source):
     records_loaded = 0
 
     maf_data = []
-    print("\nLoading data from file: %      [line 2], all allele fields are missing or invalid values ('Reference_Allele', 'Tumor_Seq_Allele1', 'Tumor_Seq_Allele2'): (N, N, )s" % (filename))
+    print("\nLoading data from file: %s" % (filename))
     with open(filename, "r") as data_file:
         (header, raw_header_line) = get_file_header(filename)
         for record_index, line in enumerate(data_file.readlines()):
